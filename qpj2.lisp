@@ -39,19 +39,19 @@ string designator and upcased."
         (sys-i (keyword-symbolize (format nil "~A.internal" name) )))
     (format t "(cl:in-package :asdf)~%")
     (terpri)
-    (print
+    (princ
      `(defsystem ,(keyword-symbolize name)
         :serial t
         :depends-on
         ,(list* :fiveam
                 :named-readtables
                 (when depends-on (mapcar #'keyword-symbolize depends-on)) )
-        :components ((:file "package")
-                     (:file "readtable")
+        :components ((:file \""package\"")
+                     (:file \""readtable\"")
                      (:file ,(string-downcase name)) )))
     (terpri)
     (terpri)
-    (print
+    (princ
      `(defmethod perform ((o test-op) (c (eql (find-system ,sys))))
         (load-system ,sys)
         (flet ((mksym (pkg sym)
@@ -61,7 +61,7 @@ string designator and upcased."
             (or (progn
                   (funcall (mksym :fiveam :explain!) result)
                   (funcall (mksym :fiveam :results-status) result) )
-                (error "test-op failed") )))) )))
+                (error \""test-op failed\"") )))) )))
 
 (defun write-system-file (name file &key depends-on)
   (quickproject::with-new-file (stream file)
