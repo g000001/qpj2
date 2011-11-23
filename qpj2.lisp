@@ -35,20 +35,21 @@ string designator and upcased."
                                depends-on ((:stream *standard-output*)
                                            *standard-output* ))
   "Write an asdf defsystem form for NAME to STREAM."
-  (let ((sys (keyword-symbolize name))
-        (sys-i (keyword-symbolize (format nil "~A.internal" name) )))
+  (let ((sys (format nil ":~A" name))
+        (sys-i (format nil ":~A.internal" name)))
     (format t "(cl:in-package :asdf)~%")
     (terpri)
     (princ
-     `(defsystem ,(keyword-symbolize name)
-        :serial t
-        :depends-on
-        ,(list* :fiveam
-                :named-readtables
-                (when depends-on (mapcar #'keyword-symbolize depends-on)) )
-        :components ((:file \""package\"")
-                     (:file \""readtable\"")
-                     (:file ,(string-downcase name)) )))
+     `(defsystem ,(format nil ":~A" name)
+        ":serial" t
+        ":depends-on"
+        ,(list* ":fiveam"
+                ":named-readtables"
+                (when depends-on (mapcar (lambda (x) (format nil ":~A" x))
+                                         depends-on)) )
+        ":components" ((":file" "\"package\"")
+                     (":file" "\"readtable\"")
+                     (":file" ,(string-downcase name)) )))
     (terpri)
     (terpri)
     (princ
@@ -56,11 +57,11 @@ string designator and upcased."
         (load-system ,sys)
         (flet ((mksym (pkg sym)
                  (intern (symbol-name sym) (find-package pkg)) ))
-          (let ((result (funcall (mksym :fiveam :run)
+          (let ((result (funcall (mksym ":fiveam" ":run")
                                  (mksym ,sys-i ,sys) )))
             (or (progn
-                  (funcall (mksym :fiveam :explain!) result)
-                  (funcall (mksym :fiveam :results-status) result) )
+                  (funcall (mksym ":fiveam" ":explain!") result)
+                  (funcall (mksym ":fiveam" ":results-status") result) )
                 (error \""test-op failed\"") )))) )))
 
 (defun write-system-file (name file &key depends-on)
