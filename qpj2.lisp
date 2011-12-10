@@ -31,38 +31,27 @@ string designator and upcased."
             (keyword-symbolize name))
     (terpri stream)))
 
-(defun write-system-form (name &key
-                               depends-on ((:stream *standard-output*)
-                                           *standard-output* ))
+(defun write-system-form (name &key depends-on (stream *standard-output*))
   "Write an asdf defsystem form for NAME to STREAM."
-  (let ((sys (format nil ":~A" name))
-        (sys-i (format nil ":~A.internal" name)))
-    (format t "(cl:in-package :asdf)~%")
-    (terpri)
-    (princ
-     `(defsystem ,(format nil ":~A" name)
-        ":serial" t
-        ":depends-on"
-        ,(list* ":fiveam"
-                ":named-readtables"
-                (when depends-on (mapcar (lambda (x) (format nil ":~A" x))
-                                         depends-on)) )
-        ":components" ((":file" "\"package\"")
-                     (":file" "\"readtable\"")
-                     (":file" ,(string-downcase name)) )))
-    (terpri)
-    (terpri)
-    (princ
-     `(defmethod perform ((o test-op) (c (eql (find-system ,sys))))
-        (load-system ,sys)
-        (flet ((mksym (pkg sym)
-                 (intern (symbol-name sym) (find-package pkg)) ))
-          (let ((result (funcall (mksym ":fiveam" ":run")
-                                 (mksym ,sys-i ,sys) )))
-            (or (progn
-                  (funcall (mksym ":fiveam" ":explain!") result)
-                  (funcall (mksym ":fiveam" ":results-status") result) )
-                (error \""test-op failed\"") )))) )))
+  (let ((*print-case* :downcase))
+    (format stream "(cl:in-package :asdf)~%~%")
+    (format stream "(defsystem ~S~%" (keyword-symbolize name))
+    (format stream "  :serial t~%")
+    (format stream "  :depends-on (~{~S~^~%~15T~})~%"
+            (list* :fiveam :named-readtables
+                   (when depends-on (mapcar #'keyword-symbolize depends-on))))
+    (format stream "  :components ((:file \"package\")~%")
+    (format stream "               (:file \"readtable\")~%")
+    (format stream "               (:file ~S)))~%~%" name)
+
+    (format stream "(defmethod perform ((o test-op) (c (eql (find-system ~S))))~%" (keyword-symbolize name))
+    (format stream "  (load-system ~S)~%" (keyword-symbolize name))
+    (format stream "  (or (flet ((_ (pkg sym)~%")
+    (format stream "               (intern (symbol-name sym) (find-package pkg))))~%")
+    (format stream "         (let ((result (funcall (_ :fiveam :run) (_ ~S.internal ~:*~S))))~%" (keyword-symbolize name))
+    (format stream "           (funcall (_ :fiveam :explain!) result)~%")
+    (format stream "           (funcall (_ :fiveam :results-status) result)))~%")
+    (format stream "      (error \"test-op failed\") ))~%" ) ))
 
 (defun write-system-file (name file &key depends-on)
   (quickproject::with-new-file (stream file)
