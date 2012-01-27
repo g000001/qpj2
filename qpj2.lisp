@@ -53,9 +53,12 @@ string designator and upcased."
     (format stream "           (funcall (_ :fiveam :results-status) result)))~%")
     (format stream "      (error \"test-op failed\") ))~%" ) ))
 
+(defun file-comment-header-with-mode-name (stream)
+  (format stream ";;;; ~A -*- Mode: ~A;-*- ~%~%" (file-namestring stream) "Lisp"))
+
 (defun write-system-file (name file &key depends-on)
   (quickproject::with-new-file (stream file)
-    (quickproject::file-comment-header stream)
+    (file-comment-header-with-mode-name stream)
     (write-system-form name
                        :depends-on depends-on
                        :stream stream)
